@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: valentine-proposal
+    env: node
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false  # Set this in Render dashboard
+      - key: PORT
+        fromService:
+          type: web
+          name: valentine-proposal
+          property: port

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -86,18 +87,19 @@ app.use((req, res, next) => {
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
+  // Render and other platforms set PORT automatically
+  // Default to 5000 if not specified (for local development)
   const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
-  );
+  
+  // In production, always listen on 0.0.0.0 to accept external connections
+  // In development on Windows, use localhost
+  const isWindows = process.platform === "win32";
+  const isProduction = process.env.NODE_ENV === "production";
+  const listenOptions = (isWindows && !isProduction)
+    ? { port, host: "localhost" }
+    : { port, host: "0.0.0.0", ...(isProduction ? {} : { reusePort: true }) };
+  
+  httpServer.listen(listenOptions, () => {
+    log(`serving on port ${port}`);
+  });
 })();

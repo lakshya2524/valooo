@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Success from "@/pages/Success";
 import Gallery from "@/pages/Gallery";
+import SecretMessage from "@/pages/SecretMessage";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/success" component={Success} />
       <Route path="/gallery" component={Gallery} />
+      <Route path="/secret-message" component={SecretMessage} />
       <Route component={NotFound} />
     </Switch>
   );

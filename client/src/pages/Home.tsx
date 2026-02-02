@@ -72,14 +72,14 @@ export default function Home() {
       >
         <div className="bg-white/80 backdrop-blur-md rounded-[3rem] p-8 md:p-16 shadow-xl shadow-primary/10 border-4 border-white text-center relative overflow-visible">
           
-          {/* Decorative Bear Image */}
+          {/* Decorative Cat Image */}
           <div className="mb-8 relative inline-block">
-             {/* cute bear with heart */}
+             {/* cute begging cat */}
             <motion.img 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
-              src="https://media1.tenor.com/m/1k_vM7Lq4oAAAAAC/goma-goma-cat.gif"
+              src="/uploads/cute-begging-cat.jpg"
               alt="Cute begging cat"
               className="w-48 h-48 md:w-64 md:h-64 object-contain mx-auto rounded-2xl"
             />
@@ -107,7 +107,7 @@ export default function Home() {
             transition={{ delay: 0.7 }}
             className="text-lg md:text-2xl text-muted-foreground mb-12 font-medium"
           >
-            I promise to buy you chocolates and give you lots of hugs! 🍫🤗
+            I don’t just like the idea of you , I like you
           </motion.p>
 
           <div className="flex flex-col md:flex-row gap-6 justify-center items-center min-h-[120px]">
