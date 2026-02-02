@@ -60,8 +60,9 @@ Fill in the following settings:
 - **Environment**: Select **"Node"**
 - **Build Command**: 
   ```
-  npm run build
+  npm install && npm run build
   ```
+  *(The `npm install` ensures dev dependencies like `tsx` are installed)*
 - **Start Command**: 
   ```
   npm start
