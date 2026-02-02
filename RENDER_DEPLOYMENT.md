@@ -60,9 +60,9 @@ Fill in the following settings:
 - **Environment**: Select **"Node"**
 - **Build Command**: 
   ```
-  npm install && npm run build
+  NODE_ENV=development npm install && npm run build
   ```
-  *(The `npm install` ensures dev dependencies like `tsx` are installed)*
+  *(Setting `NODE_ENV=development` ensures dev dependencies like `tsx` and `esbuild` are installed)*
 - **Start Command**: 
   ```
   npm start
