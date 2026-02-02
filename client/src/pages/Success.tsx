@@ -1,11 +1,14 @@
 import { useEffect } from "react";
+import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { Heart, Sparkles, Share2 } from "lucide-react";
+import { Heart, Sparkles, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FloatingHearts } from "@/components/FloatingHearts";
 import confetti from "canvas-confetti";
 
 export default function Success() {
+  const [, setLocation] = useLocation();
+
   useEffect(() => {
     // Initial burst
     confetti({
@@ -109,12 +112,20 @@ export default function Success() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1 }}
-            className="mt-12 flex justify-center gap-4"
+            className="mt-12 flex flex-col items-center gap-6"
           >
-             <div className="flex flex-col items-center gap-2">
-                <span className="text-sm font-semibold text-pink-400 uppercase tracking-widest">See you soon!</span>
-                <Heart className="w-8 h-8 text-pink-500 animate-bounce" />
-             </div>
+            <Button
+              onClick={() => setLocation("/gallery")}
+              className="px-8 py-6 text-xl rounded-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/30"
+              data-testid="button-view-gallery"
+            >
+              <ImageIcon className="w-5 h-5 mr-2" />
+              View Amrit's Gallery
+            </Button>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-sm font-semibold text-pink-400 uppercase tracking-widest">See you soon!</span>
+              <Heart className="w-8 h-8 text-pink-500 animate-bounce" />
+            </div>
           </motion.div>
         </div>
       </motion.div>
