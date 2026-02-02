@@ -8,6 +8,7 @@ export interface IStorage {
   createImage(image: InsertImage): Promise<Image>;
   getImages(): Promise<Image[]>;
   getImagesByCategory(category: string): Promise<Image[]>;
+  getImageById(id: number): Promise<Image | undefined>;
   deleteImage(id: number): Promise<boolean>;
 }
 
@@ -38,6 +39,11 @@ export class DatabaseStorage implements IStorage {
 
   async getImagesByCategory(category: string): Promise<Image[]> {
     return await db.select().from(images).where(eq(images.category, category));
+  }
+
+  async getImageById(id: number): Promise<Image | undefined> {
+    const [image] = await db.select().from(images).where(eq(images.id, id));
+    return image;
   }
 
   async deleteImage(id: number): Promise<boolean> {

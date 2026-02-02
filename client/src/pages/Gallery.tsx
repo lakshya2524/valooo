@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Plus, Sparkles, X, ImagePlus, Trash2 } from "lucide-react";
+import { Heart, Plus, Sparkles, Upload, ImagePlus, Trash2, Link2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
 const categoryEmojis: Record<string, string> = {
   cute: "🥰",
@@ -44,6 +50,11 @@ export default function Gallery() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState("");
   const [newImageCategory, setNewImageCategory] = useState<string>("");
+  const [uploadCategory, setUploadCategory] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: images = [], isLoading } = useQuery<Image[]>({
     queryKey: ["/api/images"],
@@ -99,6 +110,71 @@ export default function Gallery() {
       return;
     }
     addImage.mutate({ url: newImageUrl, category: newImageCategory });
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile || !uploadCategory) {
+      toast({
+        title: "Missing info",
+        description: "Please select a file and category.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("image", selectedFile);
+    formData.append("category", uploadCategory);
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/images"] });
+      setIsAddOpen(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setUploadCategory("");
+      toast({
+        title: "Photo uploaded!",
+        description: "Amrit's gallery just got better!",
+      });
+    } catch (err) {
+      toast({
+        title: "Upload failed",
+        description: "Couldn't upload the photo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const resetUploadForm = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setUploadCategory("");
+    setNewImageUrl("");
+    setNewImageCategory("");
   };
 
   return (
@@ -161,7 +237,7 @@ export default function Gallery() {
         </div>
 
         <div className="flex justify-center mb-8">
-          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <Dialog open={isAddOpen} onOpenChange={(open) => { setIsAddOpen(open); if (!open) resetUploadForm(); }}>
             <DialogTrigger asChild>
               <Button 
                 className="rounded-full px-6 py-6 text-lg bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 shadow-lg shadow-pink-500/30"
@@ -178,49 +254,129 @@ export default function Gallery() {
                   Add a Photo of Amrit
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 mt-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+              
+              <Tabs defaultValue="upload" className="mt-4">
+                <TabsList className="grid w-full grid-cols-2 rounded-xl">
+                  <TabsTrigger value="upload" className="rounded-lg" data-testid="tab-upload">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Upload File
+                  </TabsTrigger>
+                  <TabsTrigger value="url" className="rounded-lg" data-testid="tab-url">
+                    <Link2 className="w-4 h-4 mr-2" />
                     Image URL
-                  </label>
-                  <Input
-                    placeholder="https://example.com/photo.jpg"
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                    className="rounded-xl"
-                    data-testid="input-image-url"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                    Category
-                  </label>
-                  <Select value={newImageCategory} onValueChange={setNewImageCategory}>
-                    <SelectTrigger className="rounded-xl" data-testid="select-category">
-                      <SelectValue placeholder="Choose a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {imageCategories.map((category) => (
-                        <SelectItem key={category} value={category} data-testid={`option-${category}`}>
-                          {categoryEmojis[category]} {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button 
-                  onClick={handleAddImage}
-                  disabled={addImage.isPending}
-                  className="w-full rounded-xl py-6 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
-                  data-testid="button-submit-photo"
-                >
-                  {addImage.isPending ? (
-                    <Sparkles className="w-5 h-5 animate-spin" />
-                  ) : (
-                    "Add to Gallery"
-                  )}
-                </Button>
-              </div>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="upload" className="space-y-4 mt-4">
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-pink-300 rounded-2xl p-8 text-center cursor-pointer hover:border-pink-500 hover:bg-pink-50/50 transition-all duration-300"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      data-testid="input-file-upload"
+                    />
+                    {previewUrl ? (
+                      <div className="relative">
+                        <img 
+                          src={previewUrl} 
+                          alt="Preview" 
+                          className="max-h-48 mx-auto rounded-xl object-cover"
+                        />
+                        <p className="text-sm text-muted-foreground mt-2">Click to change photo</p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-12 h-12 text-pink-400 mx-auto mb-3" />
+                        <p className="text-lg font-medium text-foreground">Click to upload</p>
+                        <p className="text-sm text-muted-foreground">JPG, PNG, GIF up to 10MB</p>
+                      </>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                      Category
+                    </label>
+                    <Select value={uploadCategory} onValueChange={setUploadCategory}>
+                      <SelectTrigger className="rounded-xl" data-testid="select-upload-category">
+                        <SelectValue placeholder="Choose a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {imageCategories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {categoryEmojis[category]} {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleFileUpload}
+                    disabled={isUploading || !selectedFile || !uploadCategory}
+                    className="w-full rounded-xl py-6 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+                    data-testid="button-upload-photo"
+                  >
+                    {isUploading ? (
+                      <Sparkles className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Upload className="w-5 h-5 mr-2" />
+                        Upload to Gallery
+                      </>
+                    )}
+                  </Button>
+                </TabsContent>
+                
+                <TabsContent value="url" className="space-y-4 mt-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                      Image URL
+                    </label>
+                    <Input
+                      placeholder="https://example.com/photo.jpg"
+                      value={newImageUrl}
+                      onChange={(e) => setNewImageUrl(e.target.value)}
+                      className="rounded-xl"
+                      data-testid="input-image-url"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                      Category
+                    </label>
+                    <Select value={newImageCategory} onValueChange={setNewImageCategory}>
+                      <SelectTrigger className="rounded-xl" data-testid="select-category">
+                        <SelectValue placeholder="Choose a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {imageCategories.map((category) => (
+                          <SelectItem key={category} value={category} data-testid={`option-${category}`}>
+                            {categoryEmojis[category]} {category.charAt(0).toUpperCase() + category.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button 
+                    onClick={handleAddImage}
+                    disabled={addImage.isPending}
+                    className="w-full rounded-xl py-6 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600"
+                    data-testid="button-submit-photo"
+                  >
+                    {addImage.isPending ? (
+                      <Sparkles className="w-5 h-5 animate-spin" />
+                    ) : (
+                      "Add to Gallery"
+                    )}
+                  </Button>
+                </TabsContent>
+              </Tabs>
             </DialogContent>
           </Dialog>
         </div>
